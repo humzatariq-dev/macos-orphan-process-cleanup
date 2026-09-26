@@ -1,0 +1,39 @@
+Sample real run (from the cleanup that inspired this repo — names/PIDs generalized)
+================================================================================
+
+BACKGROUND: after a day of agent/automation work, Activity Monitor showed ~2.5 GB
+of RAM held by processes that had no business still running.
+
+WHAT WAS FOUND
+--------------
+* 11 orphaned "Google Chrome --headless=new ... --screenshot=..." processes
+  (~26 hours old, 100-700 MB each) left over from screenshot/DOM-dump tasks.
+* 114 duplicated "node .../godot-mcp/build/index.js" MCP server processes
+  (~786 MB total) accumulated across editor sessions.
+
+WHAT THE CLEANUP DID
+--------------------
+Step 1) Killed all 11 orphaned headless Chrome processes   -> ~1.76 GB freed
+        System free memory: 55% -> 60%
+
+Step 2) Killed 73 godot-mcp processes older than 3 hours   -> ~617 MB freed
+        14 recent processes kept (safe for live connections)
+        System free memory: 60% -> 66%
+
+RESULT
+------
+TOTAL RECLAIMED: ~2.5 GB
+Processes:       125 stale -> 14 live
+Swap:            0 MB before and after (no memory pressure remained)
+
+SCRIPT OUTPUT (reproduced)
+--------------------------
+[2026-09-26 17:22:00] ===== orphan-process-cleanup started (max age: 3h) =====
+[2026-09-26 17:22:00] System free memory before: 60%
+[2026-09-26 17:22:00] Headless Chrome orphans: 11 process(es), 1763.2 MB
+[2026-09-26 17:22:02] Headless Chrome after: 0.0 MB -> freed 1763.2 MB
+[2026-09-26 17:22:02] MCP server processes: 87 total (786.4 MB), 73 older than 3h
+[2026-09-26 17:22:04] MCP servers after: 169.4 MB across 14 kept process(es) -> freed 617.0 MB
+[2026-09-26 17:22:04] System free memory after: 66% (was 60%)
+[2026-09-26 17:22:04] TOTAL MEMORY RECLAIMED BY THIS RUN: 2380.2 MB
+[2026-09-26 17:22:04] ===== run finished =====
