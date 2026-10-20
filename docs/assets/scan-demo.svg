@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="340" viewBox="0 0 1100 340" role="img" aria-labelledby="title desc">
+<title id="title">Synthetic read-only process scan</title>
+<desc id="desc">Two synthetic Godot candidates for review and one report-only Chrome match. No processes terminated. RSS is not measured RAM freed.</desc>
+<rect width="1100" height="340" rx="12" fill="#111827"/>
+<g font-family="monospace" font-size="14" fill="#e5e7eb">
+<text x="24" y="32">SYNTHETIC DEMO | no live processes | scan only</text>
+<text x="24" y="56"></text>
+<text x="24" y="80">$ ./orphan-cleanup scan</text>
+<text x="24" y="104">PID  PROFILE  AGE  RSS_KiB  PPID  STATUS  REASON</text>
+<text x="24" y="128">100  godot-mcp  03:00:00  1024  1  review  eligible</text>
+<text x="24" y="152">101  godot-mcp  03:00:00  1024  1  review  eligible</text>
+<text x="24" y="176">102  headless-chrome  03:00:00  2048  1  keep  ambiguous_command</text>
+<text x="24" y="200">Candidates: 2; estimated candidate RSS: 2048 KiB (not measured RAM freed).</text>
+<text x="24" y="224">No processes terminated.</text>
+<text x="24" y="248"></text>
+<text x="24" y="272">A match is not proof of inactivity. Chrome stays report-only.</text>
+</g>
+</svg>

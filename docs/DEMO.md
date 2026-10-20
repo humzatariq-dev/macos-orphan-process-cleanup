@@ -41,3 +41,22 @@ LOGFILE isolated in the temporary directory. This demo never invokes `clean`.
 It does not verify installation, live-process behavior, or the planned CI matrix.
 The broader `/bin/bash tests/run.sh` suite also covers guarded disposable-child
 behavior and CLI/PTY cases (development dependency: Python 3).
+
+## Shareable assets
+
+- [SVG terminal preview](assets/scan-demo.svg): embedded in the README.
+- [Portable terminal recording](assets/scan-demo.cast): asciicast v2, generated
+  from the same actual fixture scan output. If you already have an asciicast v2
+  player, open it there; a player is not a production dependency. No external
+  hosting, upload, or embedded third-party player is needed for the README preview.
+
+Regenerate both assets from the repository root with development-only Python 3:
+
+```bash
+python3 scripts/demo.py
+```
+
+The generator uses a temporary HOME/log/signal recorder, invokes only fixture
+`scan`, asserts no signals/logs, and rejects fixture secret text in its output.
+It renders the real fixture result rather than inventing process rows. Timing is
+staged for readability; it is not a measurement of runtime performance.

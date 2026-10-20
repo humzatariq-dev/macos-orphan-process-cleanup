@@ -2,7 +2,13 @@
 
 ## Unreleased
 
-No additional changes yet.
+### Launch materials
+
+- Broaden audience messaging toward macOS developer-process investigation while
+  retaining explicit Godot/Chrome scope and report-only Chrome behavior.
+- Add generated synthetic terminal preview/recording, reproducible demo assets,
+  read-only feedback invitation, and short/community launch drafts.
+- Documentation/assets only; no new process profiles or cleanup behavior.
 
 ## 0.2.0 — 2026-10-19
 

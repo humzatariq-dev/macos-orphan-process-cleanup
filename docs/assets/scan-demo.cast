@@ -1,0 +1,7 @@
+{"version": 2, "width": 120, "height": 16, "title": "Synthetic read-only scan — no live processes", "env": {"TERM": "xterm-256color"}}
+[0.0, "o", "SYNTHETIC DEMO | no live processes | scan only\r\n\r\n$ "]
+[0.8, "o", "./orphan-cleanup scan"]
+[2.0, "o", "\r\n"]
+[2.3, "o", "PID\tPROFILE\tAGE\tRSS_KiB\tPPID\tSTATUS\tREASON\r\n100\tgodot-mcp\t03:00:00\t1024\t1\treview\teligible\r\n101\tgodot-mcp\t03:00:00\t1024\t1\treview\teligible\r\n102\theadless-chrome\t03:00:00\t2048\t1\tkeep\tambiguous_command\r\nCandidates: 2; estimated candidate RSS: 2048 KiB (not measured RAM freed).\r\nNo processes terminated.\r\n"]
+[6.0, "o", "\r\nA match is not proof of inactivity. Chrome stays report-only.\r\n"]
+[9.0, "o", "\r\n$ "]

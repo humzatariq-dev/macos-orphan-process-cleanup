@@ -1,7 +1,31 @@
 # macOS Orphan Process Cleanup
 
-A conservative macOS tool for investigating leftover Godot MCP servers and
-headless Chrome processes—not a general RAM optimizer.
+**What's still running after your developer tools close?**
+
+A scan-first macOS CLI for investigating leftover developer processes. Built for
+people working with MCP, local agents, and browser automation—not a RAM optimizer
+or a universal orphan detector.
+
+**Supported today:** narrow Godot MCP matching and headless Chrome review.
+Chrome stays report-only. Other MCP servers, Unity, arbitrary Node/Python, and
+containers are not supported profiles; help shape which specific profile comes next.
+
+![Synthetic scan preview: Godot candidates and a report-only Chrome match; no processes terminated](docs/assets/scan-demo.svg)
+
+*Synthetic, scan-only output—not a real process capture or memory-savings claim.*
+[Reproduce the demo or replay the terminal recording](docs/DEMO.md).
+
+### Try the read-only scan; help widen coverage
+
+Use the quick start below, then tell us whether installation worked, whether the
+reasons made sense, and which specific developer process you need to investigate.
+A missing match is useful feedback too. Open a bug/false-positive or profile-request
+issue with your tool version, macOS version, expected behavior, and a **redacted or
+synthetic example**. No cleanup or verbose output is needed. Never share tokens,
+private paths, or raw process listings.
+
+[Launch post drafts and audience framing](docs/LAUNCH.md) are ready to adapt;
+no posts have been published on your behalf.
 
 ## Status and scope
 
