@@ -1,5 +1,13 @@
 # macOS Orphan Process Cleanup
 
+## Development roadmap
+
+See the [adoption-ready release tracker](docs/ROADMAP.md) for the agreed
+milestones, implementation tasks, acceptance criteria, dependencies, and release
+gates. Milestones 1–3 are the planned scope; milestones 4–5 are optional backlog.
+**These improvements are planned, not implemented: the script currently retains
+the behavior described below.**
+
 **Reclaim gigabytes of wasted RAM on your Mac — cleans up orphaned headless Chrome instances and leaked/duplicated MCP (Model Context Protocol) server processes that pile up in Activity Monitor and never exit.**
 
 No dependencies. No `sudo`. Pure bash + the tools that ship with macOS. Logs exactly what it killed and **how much memory it freed**.
