@@ -19,9 +19,9 @@ ShellCheck **all `*.sh` files and `orphan-cleanup`**, then run
 `/bin/bash tests/run.sh`. `/bin/bash scripts/package.sh` produces an archive and checksum
 in `./dist`; inspect those artifacts and test clean install/uninstall separately.
 No artifact is a published
-release merely because packaging passed. Target 0.2.0 is not yet published.
+release merely because packaging passed. Publication status is recorded in the changelog.
 
-Planned CI: `macos-15` arm64 and `macos-15-intel` x86_64. Record actual
+CI matrix: `macos-15` arm64 and `macos-15-intel` x86_64. Record actual
 `sw_vers`, `uname -m`, and `/bin/bash --version` in each run; do not turn planned
 coverage into claims of passing tests. Current local observation only: macOS
 27.0.1, build 26A434, arm64, Bash 3.2.57.

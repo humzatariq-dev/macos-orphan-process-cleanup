@@ -166,17 +166,13 @@ is legacy, not evidence of current behavior or memory reclamation.
 See [CONTRIBUTING.md](CONTRIBUTING.md) for checks and safety invariants and the
 [reproducible synthetic demo](docs/DEMO.md) for scan-only output.
 Runtime requires no additional dependencies. Development needs Python 3 and
-ShellCheck. The M3 `./scripts/check.sh` contract is syntax checking and ShellCheck
-for all `*.sh` files plus `orphan-cleanup`, followed by `/bin/bash tests/run.sh`.
-`./scripts/package.sh` is intended to write an archive and checksum to `./dist`;
-these M3 commands are illustrative until the scripts exist in your checkout.
-Packaging is not publication or release verification.
+ShellCheck 0.11.0. Run `/bin/bash scripts/check.sh` for syntax/lint, core and
+CLI/PTY tests, installation lifecycle, packaging and artifact verification.
+`/bin/bash scripts/package.sh` writes a committed-source archive and SHA-256
+checksum under `dist/`. Packaging alone is not publication.
 
-Observed locally for this documentation: **macOS 27.0.1 (build 26A434), arm64,
-Bash 3.2.57**. This observation is not a compatibility certification or a CI result.
-Planned CI runners are `macos-14` (arm64) and `macos-15-intel` (x86_64);
-each run must record actual OS/build, architecture, and Bash versions before any
-support claim. Runner labels alone are not verification evidence.
+Local environment: macOS 27.0.1 (26A434), arm64, Bash 3.2.57. Hosted CI also
+passes on `macos-15` and `macos-15-intel`; see the verification matrix below.
 
 ## License
 
