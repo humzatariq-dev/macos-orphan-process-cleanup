@@ -1,153 +1,135 @@
 # macOS Orphan Process Cleanup
 
-## Development roadmap
+A conservative macOS tool for investigating leftover Godot MCP servers and
+headless Chrome processes—not a general RAM optimizer.
 
-See the [adoption-ready release tracker](docs/ROADMAP.md) for the agreed
-milestones, implementation tasks, acceptance criteria, dependencies, and release
-gates. Milestones 1–3 are the planned scope; milestones 4–5 are optional backlog.
-**These improvements are planned, not implemented: the script currently retains
-the behavior described below.**
+## Status and scope
 
-**Reclaim gigabytes of wasted RAM on your Mac — cleans up orphaned headless Chrome instances and leaked/duplicated MCP (Model Context Protocol) server processes that pile up in Activity Monitor and never exit.**
+**Milestone 1 is implemented and locally tested.** This is a development
+checkout, not the milestone 3 release. Older revisions perform cleanup by
+default; review changes before running.
 
-No dependencies. No `sudo`. Pure bash + the tools that ship with macOS. Logs exactly what it killed and **how much memory it freed**.
+- **M1:** read-only scanning through the existing script, conservative selection,
+  and a library-tested termination primitive with revalidation, SIGTERM, and logging.
+  The primitive is not a public cleanup interface.
+- **M2:** deliberate public cleanup and the fuller CLI workflow. **No public
+  `clean` command is exposed in M1.**
+- **M3:** CI, versioned installation, onboarding, and release verification.
 
-```
-[2026-09-26 17:24:10] TOTAL MEMORY RECLAIMED BY THIS RUN: 77.5 MB
-```
+There is no canonical `orphan-cleanup` entrypoint yet. Use
+`cleanup_orphan_processes.sh`. The [release tracker](docs/ROADMAP.md) defines
+acceptance criteria and completion evidence; its future CLI contract is not a
+list of commands available today. See also the [changelog](CHANGELOG.md).
 
----
+## Requirements
 
-## Do you need this?
+macOS with stock Bash 3.2 and built-in command-line tools. No additional runtime
+dependencies or `sudo` are required. Do not run as root.
 
-Open **Activity Monitor → Memory** (or run `ps -axo pid,rss,etime,comm | sort -k2 -nr | head`) and check for:
+## Clone and scan
 
-- 🔴 **`Google Chrome --headless=new --screenshot=...`** processes that are **hours or days old**, each eating 100–700 MB. These come from screenshot / DOM-dump / PDF-export automation (`--virtual-time-budget`, Puppeteer-style scripts, agent/LLM tooling) that hung instead of exiting. They get reparented to `launchd` (PID 1) and sit there forever.
-- 🔴 **Dozens (even 100+) copies of `node .../some-mcp-server/index.js`** — leaked MCP server processes. Every client connection spawns one; crashed or disconnected sessions never reap them. Individually small (~6 MB), collectively **hundreds of MB to GBs**.
-- 🔴 Your Mac feels sluggish, swap usage is climbing, or you're "out of memory" despite closing all your apps.
-
-**Real-world example** (this repo exists because it actually happened):
-
-| Leak | Count | Memory |
-|---|---|---|
-| Orphaned `Chrome --headless=new` (26h old) | 11 | 1.76 GB |
-| Leaked `godot-mcp` node servers | 114 | 786 MB |
-| **Total recovered** | | **~2.5 GB** |
-
-Free memory went from **55% → 66%** in under a minute.
-
-## Quick start
+Review the checked-out script before executing it, especially on older revisions.
+The following examples target the M1 interface:
 
 ```bash
 git clone https://github.com/humzatariq-dev/macos-orphan-process-cleanup.git
 cd macos-orphan-process-cleanup
-chmod +x cleanup_orphan_processes.sh
+/bin/bash cleanup_orphan_processes.sh --help
 
-./cleanup_orphan_processes.sh --dry-run   # preview what it would kill (safe)
-./cleanup_orphan_processes.sh             # clean up, keeping anything < 3h old
+# Read-only scan of both built-in profiles
+/bin/bash cleanup_orphan_processes.sh
+
+# Restrict the profile and minimum age
+/bin/bash cleanup_orphan_processes.sh --profile godot-mcp --min-age-hours 6
+/bin/bash cleanup_orphan_processes.sh --profile headless-chrome --min-age-hours 12
+
+# Compatibility aliases for the same read-only scan
+/bin/bash cleanup_orphan_processes.sh --dry-run
+/bin/bash cleanup_orphan_processes.sh -n
 ```
 
-Or run it straight from the web without cloning:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/humzatariq-dev/macos-orphan-process-cleanup/main/cleanup_orphan_processes.sh | bash
-```
-
-## Usage
-
-```
-./cleanup_orphan_processes.sh [max_age_hours]        # default: 3
-./cleanup_orphan_processes.sh 2                      # keep only processes < 2h old
-./cleanup_orphan_processes.sh --dry-run              # preview, kill nothing
-./cleanup_orphan_processes.sh -n 6                   # preview candidates 6h+
-```
+### M1 options
 
 | Option | Meaning |
-|---|---|
-| `max_age_hours` | Kill matching MCP/node processes **older than** this many hours. Recent ones are kept so you don't break live connections. Default `3`. |
-| `-n`, `--dry-run` | Print what would be killed and the memory it would free, without killing anything. |
-| `-h`, `--help` | Show help. |
+| --- | --- |
+| No arguments | Read-only scan of both profiles; no signals or log files. |
+| `--dry-run`, `-n` | Aliases for read-only scanning. |
+| `--min-age-hours N` | Minimum elapsed age, an integer from **1–8760**, inclusive; default **3**. |
+| `--profile godot-mcp\|headless-chrome` | Scan one built-in profile instead of both. |
+| `--verbose` | Include full command lines; these may contain private data. |
+| `--help` | Show usage. |
 
-Every run appends a timestamped log to `~/cleanup_orphan_processes.log` (override with `LOGFILE=/path/to/file`).
+Legacy bare numeric ages are rejected. Replace `cleanup_orphan_processes.sh 6`
+with `cleanup_orphan_processes.sh --min-age-hours 6`. A scan result is not an
+instruction to terminate a process.
 
-## What it cleans (and what it never touches)
+## Safety model
 
-✅ **Kills:**
-1. All processes matching `Chrome --headless=new` — headless automation leftovers are never user-facing work, so these are killed regardless of age.
-2. Processes matching `godot-mcp/build/index.js` **older than the age cutoff** — keeps recently spawned servers alive so active editor/agent MCP sessions survive.
+- `godot-mcp` targets a Node executable running a script ending in
+  `/godot-mcp/build/index.js`, not arbitrary Node or MCP processes.
+- `headless-chrome` reports command text containing `--headless` for review.
+  **All browser matches are report-only**: flattened process listings cannot
+  establish whether the apparent flag was a separate argument.
+- Eligibility requires the invoking non-root user's UID, PPID 1, and elapsed age
+  at least the configured threshold. PID 1, the tool, and its ancestors are excluded.
+  Missing or malformed required fields fail closed. Matches failing safety checks
+  remain report-only with a reason.
+- macOS `ps` flattens arguments into text: it does not preserve reliable argument
+  boundaries or original shell quoting. Spaced or quoted command paths are
+  ambiguous and **report-only**, even when they appear to match. This deliberately
+  misses some legitimate candidates rather than guessing. Godot eligibility
+  additionally requires exactly the executable and script, with no extra arguments.
 
-❌ **Never touches:**
-- Your real Chrome browsing session (only `--headless=new` matches; the main browser has no such flag)
-- MCP servers younger than the cutoff
-- Any system process, launch agent, or anything else
+The library termination primitive validates the complete explicit selection
+before signalling, then rereads identity and eligibility immediately before each
+SIGTERM. It observes outcomes for up to five seconds per PID, distinguishes exits,
+skips, survivors, and errors, and does not escalate to SIGKILL or terminate trees
+or process groups. Required collection or logging failures prevent signalling;
+logs must be writable first and omit full commands by default. These safeguards
+are tested at library level; they do not expose cleanup from the M1 CLI.
 
-### Cleaning up your own leaked processes?
+## Limitations and privacy
 
-The patterns are two variables at the top of the script — change them to match whatever leaks on your machine (e.g. `vite`, `playwright`, another MCP server entrypoint):
+Age, repeated commands, and PPID 1 are clues—not proof that work is abandoned.
+A long-running headless browser or MCP server may still be useful. Scanning does
+not fix the client or launcher that leaked a process.
+
+Portable shell revalidation reduces but cannot eliminate the PID-reuse race
+between checking a process and signalling it. It is not atomic identity checking
+and cannot guarantee that termination is harmless.
+
+RSS is a point-in-time estimate of resident memory, not measured RAM freed.
+Shared pages, changing workloads, and system memory accounting prevent exact
+reclamation claims.
+
+Normal output omits full commands. `--verbose` can expose tokens, usernames,
+private paths, URLs, or other secrets. Review and redact output before sharing;
+do not paste raw process listings into issues. No telemetry is part of the design.
+
+[docs/sample-run.txt](docs/sample-run.txt) is **legacy historical output**, not an
+example of M1 behavior or evidence of current safety or memory-reclamation claims.
+
+## Help shape the next milestone
+
+Try the read-only scan and open an issue with missed matches or confusing
+explanations. Include your macOS version, expected behavior, and **redacted**
+output—not secrets or private paths. The deliberate cleanup workflow follows in
+milestone 2; automation and broader expansion are optional, not promised.
+
+## Development and verification
+
+Run the safety test harness with:
 
 ```bash
-CHROME_PATTERN='Chrome --headless=new'
-MCP_PATTERN='godot-mcp/build/index\.js'
+/bin/bash tests/run.sh
 ```
 
-## Automate it (optional)
-
-Run it nightly with `launchd`, or simply add to your crontab (`crontab -e`):
-
-```cron
-0 22 * * * /path/to/macos-orphan-process-cleanup/cleanup_orphan_processes.sh 3
-```
-
-## How it works
-
-1. **Finds candidates** with `ps`/`pgrep` against the configured command-line patterns.
-2. **Filters by age** using `ps -o etime` (elapsed time). Anything with a day field (`DD-HH:MM:SS`) or hours ≥ the cutoff is considered stale. This is what keeps brand-new processes safe.
-3. **Measures memory** via RSS totals before/after and `memory_pressure -Q` for the system-wide free percentage.
-4. **Logs everything** to your console and a log file, including the total MB/GB reclaimed — so you can see exactly how it helped.
-
-Why these processes exist in the first place:
-- **Headless Chrome hangs**: `--virtual-time-budget` renders the page and *should* exit, but rendering/networking edge cases leave the process alive with nothing reaping it. Since its parent shell exited, it's orphaned to `launchd`.
-- **MCP server leaks**: MCP clients (editor extensions, agent tooling) spawn a stdio server per connection. On crash/restart the child is orphaned and idles forever waiting on stdin that will never come.
-
-## Sample output
-
-```
-[2026-09-26 17:22:00] ===== orphan-process-cleanup started (max age: 3h) =====
-[2026-09-26 17:22:00] System free memory before: 60%
-[2026-09-26 17:22:00] Headless Chrome orphans: 11 process(es), 1763.2 MB
-[2026-09-26 17:22:02] Headless Chrome after: 0.0 MB -> freed 1763.2 MB
-[2026-09-26 17:22:02] MCP server processes: 87 total (786.4 MB), 73 older than 3h
-[2026-09-26 17:22:04] MCP servers after: 169.4 MB across 14 kept process(es) -> freed 617.0 MB
-[2026-09-26 17:22:04] System free memory after: 66% (was 60%)
-[2026-09-26 17:22:04] TOTAL MEMORY RECLAIMED BY THIS RUN: 2380.2 MB
-[2026-09-26 17:22:04] ===== run finished =====
-```
-
-See [docs/sample-run.txt](docs/sample-run.txt) for the full story behind this repo.
-
-## FAQ
-
-**Is it safe to run?**
-Yes. It only kills processes matching two narrowly scoped command-line patterns, and the MCP side is age-gated so recent processes survive. Use `--dry-run` first if you want to see exactly what it will do.
-
-**Do I need `sudo`?**
-No — it only touches your own user's processes.
-
-**Will it close my Chrome tabs?**
-No. Your browser runs without `--headless=new`; only headless automation instances match.
-
-**It killed something I wanted!**
-Increase the age cutoff (e.g. `./cleanup_orphan_processes.sh 12`) or adjust the patterns at the top of the script.
-
-**Does this fix the root cause?**
-No — it reclaims leaked memory. The bugs are in whatever spawned the processes (automation tooling, MCP clients). Consider updating those tools; use this as a safety net.
+The suite covers fixtures and guarded disposable-process tests; it must not
+terminate ambient processes. Passing tests alone does not complete a milestone:
+see the [tracker's evidence and exit gates](docs/ROADMAP.md). Locally verified on
+macOS 26 / Apple Silicon with Bash 3.2.57; other combinations remain unverified
+until the milestone 3 compatibility matrix and CI are established.
 
 ## License
 
-[MIT](LICENSE) — free to use, modify, and share.
-
----
-
-*Keywords: macOS memory cleanup, free up RAM Mac, Activity Monitor high memory, orphaned processes macOS, zombie processes, Chrome headless not closing, `--headless=new` stuck, MCP server processes piling up, node process leak Mac, memory_pressure, cleanup script, launchd orphan, Mac out of memory, reclaim memory macOS, process leak cleanup.*
-
-
+[MIT](LICENSE).
