@@ -5,11 +5,11 @@ headless Chrome processes—not a general RAM optimizer.
 
 ## Status and scope
 
-**Target: 0.2.0**, not yet published. The current CLI reports `0.2.0`.
+**v0.2.0 is published.** The current CLI reports `0.2.0`.
 The canonical `./orphan-cleanup` wrapper and existing
 `./cleanup_orphan_processes.sh` entrypoint share one core CLI and the same safety
-rules. Local tooling and both hosted CI architecture jobs pass; release publication is
-pending. Optional Unity
+rules. Local tooling, both hosted architecture jobs, and downloaded-asset verification
+pass. Optional Unity
 visibility is deferred and is not supported.
 
 See [profile rules](docs/PROFILES.md) and the [changelog](CHANGELOG.md).
@@ -23,7 +23,7 @@ or sudo is needed. Never run cleanup as root. Review the checkout before running
 older revisions performed cleanup by default.
 
 ```bash
-git clone https://github.com/humzatariq-dev/macos-orphan-process-cleanup.git
+git clone --branch v0.2.0 https://github.com/humzatariq-dev/macos-orphan-process-cleanup.git
 cd macos-orphan-process-cleanup
 ./orphan-cleanup --help
 ./orphan-cleanup --version
@@ -33,6 +33,19 @@ cd macos-orphan-process-cleanup
 ./orphan-cleanup scan --profile godot-mcp --min-age-hours 6
 ./orphan-cleanup scan --profile headless-chrome
 ```
+
+## Release archive verification
+
+Download `orphan-cleanup-0.2.0.tar.gz` and its `.sha256` file from the v0.2.0
+GitHub release into the same directory. Before extracting, run:
+
+```bash
+shasum -a 256 -c orphan-cleanup-0.2.0.tar.gz.sha256
+tar -xzf orphan-cleanup-0.2.0.tar.gz
+cd orphan-cleanup-0.2.0
+```
+
+The checksum detects download corruption; it is not a separate publisher signature.
 
 ## Install, upgrade, and uninstall
 
@@ -51,8 +64,8 @@ orphan-cleanup scan
 Persist that PATH setting in your shell startup file if desired. A custom prefix
 uses `PREFIX/bin`; add that directory instead. Quote prefixes containing spaces.
 To upgrade, review the desired checkout, rerun the installer with the **same
-prefix**, and check `orphan-cleanup --version`. There is no published 0.2.0
-artifact to recommend yet; never infer release availability from this guide.
+prefix**, and check `orphan-cleanup --version`. Versioned archives and SHA-256 checksums are available in the repository
+Releases section. Verify the checksum before extracting and installing.
 
 ```bash
 ./install.sh --uninstall                         # default "$HOME/.local"

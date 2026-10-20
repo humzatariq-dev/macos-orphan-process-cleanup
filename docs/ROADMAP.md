@@ -1,6 +1,6 @@
 # Adoption-ready release tracker
 
-Status: **M1–M2 complete; M3 tooling verified, publication pending**.
+Status: **required milestones 1–3 complete; v0.2.0 published and verified**.
 
 This document is the source of truth for the next release. Milestones 1–3 are
 the agreed scope, in order. Milestones 4–5 are optional backlog, not promises
@@ -39,7 +39,7 @@ pass; explicitly optional tasks are non-blocking. Do not check tasks merely beca
 | --- | --- | --- | --- |
 | 1. Correctness and safety | Required, first | Complete (local verification) | Fixture suite and disposable-process safety tests pass |
 | 2. Useful CLI | Required, after M1 | Complete (local verification) | Documented command contract passes end-to-end tests |
-| 3. Adoption-ready release | Required, after M2 | Not started | CI, clean install/uninstall, and release checklist pass |
+| 3. Adoption-ready release | Required, after M2 | Complete (release verified) | CI, clean install/uninstall, and release checklist pass |
 | 4. Community-led expansion | Optional | Deferred | Separate scope approval required |
 | 5. Optional automation | Optional | Deferred | Separate safety review and scope approval required |
 
@@ -384,7 +384,7 @@ instructions from a clean checkout.
 
 ### M3-05 — Release candidate and published release
 
-- [ ] Complete M3-05. Dependencies: M3-01, M3-02, M3-03, M3-04.
+- [x] Complete M3-05. Dependencies: M3-01, M3-02, M3-03, M3-04.
 
 Acceptance criteria:
 - Complete all required M1–M3 tasks and record their evidence before tagging `v0.2.0`.
@@ -471,3 +471,18 @@ sync; planning/documentation work alone does not complete implementation tasks.
   saying macOS 26 were inaccurate; this records the actual sw_vers observation.
 - M3-05 remains open until the final commit passes CI and published assets are
   downloaded, checksum-verified and lifecycle-tested. No completion is assumed.
+
+### Published release evidence — M3-05
+
+- Release commit/tag: `819e8834a7eb28d80acd5bd9b6045c84e9ddad31`, `v0.2.0`.
+- CI run `39354678128`: both macos-15 and macos-15-intel jobs passed on the
+  exact tag target. Local full checks and committed archive lifecycle passed.
+- Published release: https://github.com/humzatariq-dev/macos-orphan-process-cleanup/releases/tag/v0.2.0
+- Published assets: `orphan-cleanup-0.2.0.tar.gz` and matching `.sha256`.
+- SHA-256: `4d3c3dd8247689e8c6894b329b02ba89b97b4bda74210af60b3405fd9e78c531`.
+- Downloaded both public assets, independently verified SHA-256, extracted and
+  reran `tests/install.sh`: clean install/version, synthetic scan, upgrade,
+  conflicts/symlinks, interrupted rollback, log retention and repeated uninstall
+  all passed. No ambient application cleanup occurred.
+- This subsequent documentation-only update records publication; the tag remains
+  on its verified commit. M2-04 Unity and optional milestones 4–5 stay deferred.

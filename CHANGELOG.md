@@ -1,9 +1,13 @@
 # Changelog
 
-## 0.2.0 — release candidate (not yet published)
+## Unreleased
 
-Release candidate, not yet published. Installation and packaging pass locally;
-hosted architecture checks pass; publication is pending. See the [release tracker](docs/ROADMAP.md)
+No additional changes yet.
+
+## 0.2.0 — 2026-10-19
+
+Published as `v0.2.0` from commit `819e883`. Installation and packaging pass
+locally; both hosted architecture checks and downloaded-asset verification pass. See the [release tracker](docs/ROADMAP.md)
 for acceptance gates and completion evidence.
 
 ### CLI and breaking changes
