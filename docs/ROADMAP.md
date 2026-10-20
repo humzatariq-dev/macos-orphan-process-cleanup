@@ -1,11 +1,11 @@
 # Adoption-ready release tracker
 
-Status: **planned; implementation has not started**.
+Status: **milestone 1 implemented and locally verified; milestones 2–3 planned**.
 
 This document is the source of truth for the next release. Milestones 1–3 are
 the agreed scope, in order. Milestones 4–5 are optional backlog, not promises
-and not release requirements. Checking in this tracker does not implement its
-safeguards: the current script still has its existing behavior.
+and not release requirements. The public M1 entrypoint is read-only; the tested
+termination core is not exposed until M2 confirmation is implemented.
 
 ## Goal and boundaries
 
@@ -37,7 +37,7 @@ pass. Do not check tasks merely because a PR was opened or code was drafted.
 
 | Milestone | Priority | Status | Exit gate |
 | --- | --- | --- | --- |
-| 1. Correctness and safety | Required, first | Not started | Fixture suite and disposable-process safety tests pass |
+| 1. Correctness and safety | Required, first | Complete (local verification) | Fixture suite and disposable-process safety tests pass |
 | 2. Useful CLI | Required, after M1 | Not started | Documented command contract passes end-to-end tests |
 | 3. Adoption-ready release | Required, after M2 | Not started | CI, clean install/uninstall, and release checklist pass |
 | 4. Community-led expansion | Optional | Deferred | Separate scope approval required |
@@ -76,6 +76,16 @@ document and its tests in the same change.
    per PID, checking identity. Record confirmed exit, still running, disappeared
    before signal, identity changed, or signal error separately. Never signal a
    replacement process or escalate to SIGKILL.
+
+### M1 conservative matching refinement
+
+`ps` does not preserve argv boundaries. All browser matches are report-only.
+Godot eligibility requires exactly two whitespace-free words (executable and
+script), without quotes or escapes. A reliable argv collector is required before
+enabling browser cleanup; this may remain deferred rather than weaken safety.
+Scanning still reports both profiles. This restriction supersedes any implication
+below that both profiles must be cleanable in M2. The public M1 CLI is scan-only;
+M2 retains ownership of the complete command contract and confirmation flow.
 
 ### CLI contract
 
@@ -124,7 +134,7 @@ Deliver a tested safety core before exposing a new cleanup interface.
 
 ### M1-01 — Deterministic test harness and process fixtures
 
-- [ ] Complete M1-01. Dependencies: none.
+- [x] Complete M1-01. Dependencies: none.
 
 Acceptance criteria:
 - Add a single documented test command that runs on stock Bash 3.2/macOS.
@@ -140,7 +150,7 @@ signal recorder is empty for every read-only scenario.
 
 ### M1-02 — Correct age conversion and threshold validation
 
-- [ ] Complete M1-02. Dependencies: M1-01.
+- [x] Complete M1-02. Dependencies: M1-01.
 
 Acceptance criteria:
 - Parse `MM:SS`, `HH:MM:SS`, and `DD-HH:MM:SS` into elapsed seconds.
@@ -155,7 +165,7 @@ or signalling needed.
 
 ### M1-03 — Conservative snapshot classification
 
-- [ ] Complete M1-03. Dependencies: M1-01, M1-02.
+- [x] Complete M1-03. Dependencies: M1-01, M1-02.
 
 Acceptance criteria:
 - Implement selection policy steps 1–4, including both profiles' age checks.
@@ -171,7 +181,7 @@ Verification: fixture matrix asserting eligible PID sets and exclusion reasons.
 
 ### M1-04 — Revalidation and bounded graceful termination
 
-- [ ] Complete M1-04. Dependencies: M1-03.
+- [x] Complete M1-04. Dependencies: M1-03.
 
 Acceptance criteria:
 - Implement selection policy steps 5–7, including root refusal and complete-set
@@ -189,7 +199,7 @@ Verification: fixture failure-path tests plus disposable-child integration test.
 
 ### M1-05 — Honest results and fail-closed logging
 
-- [ ] Complete M1-05. Dependencies: M1-04.
+- [x] Complete M1-05. Dependencies: M1-04.
 
 Acceptance criteria:
 - Report candidate count, estimated candidate RSS, per-PID outcome, confirmed
@@ -381,4 +391,8 @@ sync; planning/documentation work alone does not complete implementation tasks.
 
 | Task | Commit / PR | Verification command and result | CI / manual evidence |
 | --- | --- | --- | --- |
-| — | — | No implementation tasks completed yet | — |
+| M1-01 | `0e2fa85` | `/bin/bash tests/run.sh`: 123 assertions passed; syntax and diff checks passed | Local macOS 26, arm64, Bash 3.2.57; fixtures and guarded disposable child |
+| M1-02 | `0e2fa85` | `/bin/bash tests/run.sh`: 123 assertions passed; syntax and diff checks passed | Local macOS 26, arm64, Bash 3.2.57; fixtures and guarded disposable child |
+| M1-03 | `0e2fa85` | `/bin/bash tests/run.sh`: 123 assertions passed; syntax and diff checks passed | Local macOS 26, arm64, Bash 3.2.57; fixtures and guarded disposable child |
+| M1-04 | `0e2fa85` | `/bin/bash tests/run.sh`: 123 assertions passed; syntax and diff checks passed | Local macOS 26, arm64, Bash 3.2.57; fixtures and guarded disposable child |
+| M1-05 | `0e2fa85` | `/bin/bash tests/run.sh`: 123 assertions passed; syntax and diff checks passed | Local macOS 26, arm64, Bash 3.2.57; fixtures and guarded disposable child |
