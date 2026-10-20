@@ -14,6 +14,8 @@ default; review changes before running.
   The primitive is not a public cleanup interface.
 - **M2:** deliberate public cleanup and the fuller CLI workflow. **No public
   `clean` command is exposed in M1.**
+- **Optional M2 extension:** Unity batch-process visibility, report-only and
+  opt-in; planned, not implemented. Unity termination is outside its scope.
 - **M3:** CI, versioned installation, onboarding, and release verification.
 
 There is no canonical `orphan-cleanup` entrypoint yet. Use

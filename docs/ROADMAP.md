@@ -32,8 +32,8 @@ only when dependencies are satisfied.
 A task is done only when all its acceptance criteria pass, relevant tests/docs
 are committed, and evidence is entered in the completion log. Evidence must
 include the commit, verification command/result, and CI run or manual test record
-where applicable. A milestone completes only when all its tasks and exit gates
-pass. Do not check tasks merely because a PR was opened or code was drafted.
+where applicable. A milestone completes only when all its required tasks and exit gates
+pass; explicitly optional tasks are non-blocking. Do not check tasks merely because a PR was opened or code was drafted.
 
 | Milestone | Priority | Status | Exit gate |
 | --- | --- | --- | --- |
@@ -266,6 +266,47 @@ Verification: pseudo-terminal tests for prompting plus piped-input tests for
 non-TTY cases. M2 exit gate: end-to-end scan → select → confirm → result tests
 pass for both entrypoints, including every documented exit code.
 
+### M2-04 — Unity batch visibility (optional, non-blocking)
+
+- [ ] Complete M2-04. Dependencies: M2-02. Priority: optional; does not block
+  M2-03, milestone completion, M3, or the release.
+
+Scope: an explicitly selected `unity-batch` scan profile, not Unity cleanup.
+This is a planned extension, not a currently supported CLI value. The existing
+two-profile default scan and cleanup allowlist remain unchanged.
+
+Acceptance criteria:
+- Before implementation, obtain consented, redacted examples from actual macOS
+  Unity processes, with executable identity and separately known launch arguments.
+  Never infer reliable argv boundaries from flattened `ps` text. If examples are
+  unavailable, leave this optional task deferred.
+- Identify the Unity Editor executable conservatively and report apparent batch
+  automation as `automation process—activity unknown`. Age, PPID 1, duplication,
+  `-batchmode`, and `-quit` must not be described as proof of abandonment.
+- Expose the profile only through explicit scan selection. Default scans remain
+  unchanged; no generic Unity-name/substring cleanup matcher is introduced.
+- Exclude interactive editors, Unity Hub, licensing components, shader/compiler
+  helpers, and unrelated executables. Unity MCP servers need separate future MCP
+  profiles and must not be classified as Unity Editor processes.
+- Ambiguous executable identity or argument boundaries remain report-only review
+  evidence, never cleanup eligibility. Do not claim apparent flags are known argv.
+- Enforce non-terminability in the core and CLI: reject `clean --profile
+  unity-batch` and reject Unity PIDs supplied under any cleanup profile, including
+  with `--yes`. Confirmation cannot override this restriction.
+- Add positive fixtures from redacted batch examples and negative fixtures for
+  every excluded category, misleading substrings, spaced paths, ambiguous flags,
+  other UIDs, and malformed metadata. Fixtures contain no personal data/secrets.
+- Update README/profile documentation with opt-in usage, matching boundaries,
+  exclusions, privacy, and inability to establish activity. Record implementation
+  in the changelog only when implemented; do not advertise planned support as live.
+
+Verification: fixture and CLI tests prove opt-in reporting, unchanged default
+scans, exclusions, and an empty signal recorder for every Unity scenario and
+attempted cleanup path. Tests never launch or terminate an installed Unity app.
+
+Automatic Unity termination requires a separate safety design and explicit
+approval. It is not part of this task or a release requirement.
+
 ## Milestone 3 — Adoption-ready release
 
 ### M3-01 — macOS CI and shell linting
@@ -346,7 +387,7 @@ instructions from a clean checkout.
 - [ ] Complete M3-05. Dependencies: M3-01, M3-02, M3-03, M3-04.
 
 Acceptance criteria:
-- Complete all M1–M3 tasks and record their evidence before tagging `v0.2.0`.
+- Complete all required M1–M3 tasks and record their evidence before tagging `v0.2.0`.
   If that tag already exists when implementation starts, select and document
   the next unused version before modifying version metadata.
 - Add changelog/release notes explicitly calling out the breaking change from

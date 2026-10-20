@@ -2,8 +2,8 @@
 
 ## Unreleased
 
-Milestone 1 safety-core work is in progress. This section describes the incoming
-changes, not a published release or completed milestone. See the
+Milestone 1 is implemented and locally verified, but not a published release.
+This section distinguishes implemented changes from planned scope. See the
 [release tracker](docs/ROADMAP.md) for acceptance criteria and evidence.
 
 ### Breaking changes
@@ -42,3 +42,9 @@ changes, not a published release or completed milestone. See the
   pair without additional arguments, quotes, or escapes.
 - The public M1 entrypoint is read-only; the termination core is library-only
   until milestone 2 selection and confirmation are implemented.
+
+### Planned (not implemented)
+
+- Track optional M2-04: opt-in, report-only Unity batch-process visibility with
+  explicit exclusions, redacted fixtures, and tests forbidding Unity termination.
+  This task does not block milestones 2–3 or the release; default scans stay unchanged.
