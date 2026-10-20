@@ -156,3 +156,5 @@ contains confirmed_exit
 wait "$CHILD" 2>/dev/null || :
 CHILD=
 printf 'PASS: %s assertions; Bash %s; isolated fixtures and disposable-child integration.\n' "$PASS" "$BASH_VERSION"
+command -v python3 >/dev/null 2>&1 || fail 'CLI/PTY tests require development-only Python 3'
+python3 "$ROOT/tests/cli.py" || exit 1

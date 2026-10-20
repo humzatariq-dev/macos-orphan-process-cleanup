@@ -101,16 +101,19 @@ oc_classify() {
 }
 
 oc_scan() {
-    local snapshot=$1 filter=${2:-} verbose=${3:-0} pid uid ppid start elapsed rss exe cmd count=0 total=0
-    printf 'PID\tPROFILE\tAGE\tRSS_KiB\tPPID\tREASON\n'
+    local snapshot=$1 filter=${2:-} verbose=${3:-0} pid uid ppid start elapsed rss exe cmd count=0 total=0 matches=0 state
+    printf 'PID\tPROFILE\tAGE\tRSS_KiB\tPPID\tSTATUS\tREASON\n'
     while IFS=$'\t' read -r pid uid ppid start elapsed rss exe cmd; do
         oc_classify "$pid" "$uid" "$ppid" "$start" "$elapsed" "$rss" "$exe" "$cmd"
         [ -n "$OC_PROFILE" ] && [ "$OC_REASON" != other_uid ] || continue
         [ -z "$filter" ] || [ "$filter" = "$OC_PROFILE" ] || continue
-        printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$pid" "$OC_PROFILE" "$elapsed" "$rss" "$ppid" "$OC_REASON"
+        matches=$((matches + 1)); state=keep
+        [ "$OC_REASON" != eligible ] || state=review
+        printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$pid" "$OC_PROFILE" "$elapsed" "$rss" "$ppid" "$state" "$OC_REASON"
         [ "$verbose" -eq 0 ] || printf '  command: %s\n' "$cmd"
         if [ "$OC_REASON" = eligible ]; then count=$((count + 1)); total=$((total + 10#$rss)); fi
     done <<< "$snapshot"
+    [ "$matches" -gt 0 ] || printf 'No matches found.\n'
     printf 'Candidates: %s; estimated candidate RSS: %s KiB (not measured RAM freed).\n' "$count" "$total"
     printf 'No processes terminated.\n'
 }
@@ -139,7 +142,7 @@ oc_record_eligible() {
     [ "$OC_REASON" = eligible ] && [ "$OC_PROFILE" = "$2" ]
 }
 
-# Internal core, not a public cleanup CLI. Caller must supply explicit selection
+# Cleanup core. Caller must supply explicit selection
 # after preview/confirmation (M2). Returns 2 misuse, 1 partial/failure, 0 success.
 oc_cleanup() {
     local profile=$1 snapshot=$2; shift 2
@@ -155,6 +158,19 @@ oc_cleanup() {
         row=$(printf '%s\n' "$snapshot" | awk -F '\t' -v pid="$pid" '$1==pid {print; n++} END {if(n!=1)exit 1}') || return 1
         oc_record_eligible "$row" "$profile" || return 1
         rows[${#rows[@]}]=$row
+    done
+    # Fresh complete-set preflight after any interactive delay. Disappearance
+    # is reported per PID later; identity/eligibility changes abort the set.
+    for row in "${rows[@]}"; do
+        pid=${row%%$'\t'*}
+        current=$(oc_lookup "$pid"); rc=$?
+        [ "$rc" -ne 3 ] || continue
+        [ "$rc" -eq 0 ] &&
+            [ "$(oc_identity "$row")" = "$(oc_identity "$current")" ] &&
+            oc_record_eligible "$current" "$profile" || {
+                echo "PID $pid changed or cannot be verified; nothing signalled." >&2
+                return 1
+            }
     done
     (umask 077; : >> "${LOGFILE:-$HOME/cleanup_orphan_processes.log}") || return 1
     exec 3>> "${LOGFILE:-$HOME/cleanup_orphan_processes.log}" || return 1

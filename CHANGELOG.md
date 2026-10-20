@@ -1,50 +1,57 @@
 # Changelog
 
-## Unreleased
+## Unreleased — 0.2.0-dev (M2)
 
-Milestone 1 is implemented and locally verified, but not a published release.
-This section distinguishes implemented changes from planned scope. See the
-[release tracker](docs/ROADMAP.md) for acceptance criteria and evidence.
+Development CLI, not a published release. M3 installation, CI, distribution,
+and release verification remain planned. See the [release tracker](docs/ROADMAP.md)
+for acceptance gates and completion evidence.
 
-### Breaking changes
+### CLI and breaking changes
 
-- Change the existing script to **read-only scanning by default**. `--dry-run`
-  and `-n` are scan aliases; no public `clean` command is exposed until M2.
-- Reject legacy bare numeric ages. Use `--min-age-hours N` with an integer from
-  1–8760 (default 3), for example
-  `/bin/bash cleanup_orphan_processes.sh --min-age-hours 6`.
+- Add canonical `./orphan-cleanup` wrapper; the existing
+  `./cleanup_orphan_processes.sh` shares the same core CLI.
+- Default to read-only `scan`, inspecting both built-ins. `--dry-run` and `-n`
+  remain scan aliases; they cannot be combined with `clean`.
+- Expose deliberate `clean` with exactly one built-in profile and explicit,
+  repeatable `--pid PID` selection. Preview first, then exact TTY response `yes`;
+  EOF or any other response cancels. Non-TTY cleanup requires `--yes`, which
+  bypasses only the prompt, never validation or safeguards.
+- Add help/version reporting (`0.2.0-dev`). Keep `--verbose` scan-only.
+- Reject bare numeric ages: migrate to `scan --min-age-hours N`, integer 1–8760,
+  default 3. Reject unknown/duplicate options, malformed/duplicate PIDs, missing
+  values, and extra positional arguments.
 
-### Safety fixes
+### Safety and outcomes
 
-- Correct elapsed-time conversion and validate age thresholds conservatively.
-- Add current-user, parent, age, executable, and argument checks; exclude protected
-  PIDs and fail closed on malformed snapshots. Ambiguous flattened `ps` arguments,
-  including spaced or quoted command paths, remain report-only.
-- Add a library-tested termination primitive with explicit selection validation,
-  identity and eligibility revalidation, bounded SIGTERM observation, distinct
-  outcomes, and fail-closed logging. No SIGKILL escalation or tree termination.
-- Treat RSS as an estimate rather than claiming exact RAM freed. Keep full command
-  lines out of normal output and default logs; scans do not write logs.
+- Validate the complete selection before any signal: absent/ineligible selection
+  returns 1 without signalling any PID. Revalidate the full selection after confirmation, then identity and eligibility before
+  each SIGTERM; later changes can cause partial completion.
+- Retain M1 elapsed-time fixes, current-user/parent/age checks, protected-PID
+  exclusions, fail-closed metadata handling, and conservative command matching.
+  Godot eligibility requires an unambiguous Node/script pair without extra
+  arguments. All headless Chrome matches remain report-only.
+- Observe termination for up to about five seconds per PID; distinguish exits,
+  disappearance, skips, survivors, and errors. No SIGKILL or tree termination.
+- Return 0 for success or cancellation; 1 for invalid selection or operational
+  failure (including survivors); 2 for unsupported arguments/platform or root
+  cleanup. Cancellation does not signal.
+- Preserve `$HOME/cleanup_orphan_processes.log` with `LOGFILE` override. Require
+  writable logging before signalling; omit full commands by default. Scan,
+  help, and version do not write files.
+- RSS remains an estimate, not measured RAM freed. Revalidation is not atomic and
+  cannot eliminate PID-reuse races or guarantee that useful work is not lost.
 
-### Development and documentation
+### Documentation and development
 
-- Add a deterministic safety test harness and guarded disposable-process tests,
-  run with `/bin/bash tests/run.sh`, targeting stock macOS Bash 3.2.
-- Rewrite onboarding around clone-and-scan examples, built-in profile filters,
-  verbose-output privacy risks, PID-race limitations, and M1 versus M2/M3 scope.
-- Remove remote-execution and scheduling guidance; identify the historical sample
-  run as legacy. The canonical `orphan-cleanup` entrypoint is not available yet.
+- Update clone-and-scan onboarding, cleanup contract, migration, exit codes,
+  logging, privacy, and risk guidance. Add exact built-in rules and reason codes
+  in [docs/PROFILES.md](docs/PROFILES.md).
+- Retain the deterministic safety harness and guarded disposable-process approach;
+  tests must never clean up ambient applications. Documentation changes alone
+  are not implementation or release verification evidence.
+- Unity visibility remains optional and deferred, not supported. No installation
+  or scheduled-cleanup workflow is offered before M3.
 
-### Safety limitations
-
-- All headless Chrome matches remain report-only because flattened `ps` output
-  cannot prove argument boundaries. Godot eligibility requires an executable/script
-  pair without additional arguments, quotes, or escapes.
-- The public M1 entrypoint is read-only; the termination core is library-only
-  until milestone 2 selection and confirmation are implemented.
-
-### Planned (not implemented)
-
-- Track optional M2-04: opt-in, report-only Unity batch-process visibility with
-  explicit exclusions, redacted fixtures, and tests forbidding Unity termination.
-  This task does not block milestones 2–3 or the release; default scans stay unchanged.
+- Verification: 123 core assertions and 73 CLI/PTY cases pass locally, including
+  confirmation-time mutation, golden scan output, and both entrypoints in a
+  checkout path containing spaces. Python 3 is a development-only test dependency.

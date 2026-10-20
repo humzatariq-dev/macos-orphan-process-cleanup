@@ -5,133 +5,131 @@ headless Chrome processes—not a general RAM optimizer.
 
 ## Status and scope
 
-**Milestone 1 is implemented and locally tested.** This is a development
-checkout, not the milestone 3 release. Older revisions perform cleanup by
-default; review changes before running.
+**M2 CLI: 0.2.0-dev**, a development checkout, not a published release.
+The canonical `./orphan-cleanup` wrapper and existing
+`./cleanup_orphan_processes.sh` entrypoint share one core CLI and the same safety
+rules. M3 installation, CI, release verification, and distribution remain planned;
+use the checkout, not installation or scheduling instructions. Optional Unity
+visibility is deferred and is not supported.
 
-- **M1:** read-only scanning through the existing script, conservative selection,
-  and a library-tested termination primitive with revalidation, SIGTERM, and logging.
-  The primitive is not a public cleanup interface.
-- **M2:** deliberate public cleanup and the fuller CLI workflow. **No public
-  `clean` command is exposed in M1.**
-- **Optional M2 extension:** Unity batch-process visibility, report-only and
-  opt-in; planned, not implemented. Unity termination is outside its scope.
-- **M3:** CI, versioned installation, onboarding, and release verification.
+See [profile rules](docs/PROFILES.md) and the [changelog](CHANGELOG.md).
+The [release tracker](docs/ROADMAP.md) records acceptance gates; its milestone
+status and completion evidence are maintained alongside implementation.
 
-There is no canonical `orphan-cleanup` entrypoint yet. Use
-`cleanup_orphan_processes.sh`. The [release tracker](docs/ROADMAP.md) defines
-acceptance criteria and completion evidence; its future CLI contract is not a
-list of commands available today. See also the [changelog](CHANGELOG.md).
+## Requirements and onboarding
 
-## Requirements
-
-macOS with stock Bash 3.2 and built-in command-line tools. No additional runtime
-dependencies or `sudo` are required. Do not run as root.
-
-## Clone and scan
-
-Review the checked-out script before executing it, especially on older revisions.
-The following examples target the M1 interface:
+Use macOS with stock Bash 3.2 and built-in command-line tools. No extra runtime
+or sudo is needed. Never run cleanup as root. Review the checkout before running:
+older revisions performed cleanup by default.
 
 ```bash
 git clone https://github.com/humzatariq-dev/macos-orphan-process-cleanup.git
 cd macos-orphan-process-cleanup
-/bin/bash cleanup_orphan_processes.sh --help
+./orphan-cleanup --help
+./orphan-cleanup --version
 
-# Read-only scan of both built-in profiles
-/bin/bash cleanup_orphan_processes.sh
-
-# Restrict the profile and minimum age
-/bin/bash cleanup_orphan_processes.sh --profile godot-mcp --min-age-hours 6
-/bin/bash cleanup_orphan_processes.sh --profile headless-chrome --min-age-hours 12
-
-# Compatibility aliases for the same read-only scan
-/bin/bash cleanup_orphan_processes.sh --dry-run
-/bin/bash cleanup_orphan_processes.sh -n
+# Read-only: no signals or log files
+./orphan-cleanup
+./orphan-cleanup scan --profile godot-mcp --min-age-hours 6
+./orphan-cleanup scan --profile headless-chrome
 ```
 
-### M1 options
+## CLI
 
-| Option | Meaning |
+```text
+./orphan-cleanup [scan] [--profile godot-mcp|headless-chrome] [--min-age-hours N] [--verbose]
+./orphan-cleanup clean --profile godot-mcp|headless-chrome --pid PID [--pid PID ...] [--min-age-hours N] [--yes]
+./orphan-cleanup --help
+./orphan-cleanup --version
+```
+
+- No arguments means read-only scan of both built-ins. `--dry-run` and `-n`
+  are scan aliases, not valid with `clean`.
+- Minimum age defaults to **3 hours**; N must be an integer **1–8760** inclusive.
+- `clean` requires exactly one built-in profile and explicit repeated `--pid PID`
+  flags. PIDs must be integers greater than 1, without duplicates. No implicit
+  “all candidates” selection exists. Chrome is report-only even with `clean`.
+- Unknown arguments/profiles, missing values, duplicate options (except distinct
+  `--pid` selections), and extra positional arguments are rejected.
+- `--verbose` is **scan-only**. It reveals full commands, potentially including
+  tokens, private paths, URLs, and other secrets; redact before sharing.
+
+### Deliberate cleanup
+
+First scan, investigate whether work is still needed, then select actual PIDs.
+The following is syntax only: replace placeholders after review, do not copy
+unexamined PIDs from examples or old output.
+
+```text
+./orphan-cleanup clean --profile godot-mcp --pid PID_A --pid PID_B --min-age-hours 6
+```
+
+Cleanup collects a fresh preview and requires exactly `yes` from a TTY. Any other
+response or EOF cancels successfully without signalling. Non-TTY cleanup requires
+`--yes`; this skips **only the prompt**, not preview, explicit selection,
+revalidation, eligibility, or logging. It is not an automation safety guarantee.
+
+The whole selection is validated before any signal. Any absent or ineligible
+selected PID fails the request without signalling any PID. Immediately before
+each SIGTERM, identity and eligibility are checked again. Changes during execution
+can cause partial completion. Outcomes distinguish confirmed exits, disappearance
+before signal, changed identity/eligibility, survivors, and operational errors.
+Observation is bounded to about five seconds per PID; there is no SIGKILL
+escalation, process-group signalling, or recursive tree termination.
+
+### Exit codes
+
+| Code | Meaning |
 | --- | --- |
-| No arguments | Read-only scan of both profiles; no signals or log files. |
-| `--dry-run`, `-n` | Aliases for read-only scanning. |
-| `--min-age-hours N` | Minimum elapsed age, an integer from **1–8760**, inclusive; default **3**. |
-| `--profile godot-mcp\|headless-chrome` | Scan one built-in profile instead of both. |
-| `--verbose` | Include full command lines; these may contain private data. |
-| `--help` | Show usage. |
+| 0 | Successful scan/help/version; cleanup with all selected PIDs confirmed exited or disappeared before signal; user cancellation. |
+| 1 | Absent/ineligible selection (no signals); collection, logging, or other operational failure; changed identity/eligibility, signal failure, or survivors. |
+| 2 | Invalid/unsupported arguments, unsupported platform, or root cleanup. |
 
-Legacy bare numeric ages are rejected. Replace `cleanup_orphan_processes.sh 6`
-with `cleanup_orphan_processes.sh --min-age-hours 6`. A scan result is not an
-instruction to terminate a process.
+### Logs and migration
 
-## Safety model
+Scan/help/version do not write files. Cleanup appends to
+`$HOME/cleanup_orphan_processes.log`; set `LOGFILE` to override this path.
+The log must be writable before signalling; logging failures stop further work.
+New logs use restrictive permissions; full commands are omitted by default.
+Logs still contain process IDs and outcomes: review access and redact before sharing.
 
-- `godot-mcp` targets a Node executable running a script ending in
-  `/godot-mcp/build/index.js`, not arbitrary Node or MCP processes.
-- `headless-chrome` reports command text containing `--headless` for review.
-  **All browser matches are report-only**: flattened process listings cannot
-  establish whether the apparent flag was a separate argument.
-- Eligibility requires the invoking non-root user's UID, PPID 1, and elapsed age
-  at least the configured threshold. PID 1, the tool, and its ancestors are excluded.
-  Missing or malformed required fields fail closed. Matches failing safety checks
-  remain report-only with a reason.
-- macOS `ps` flattens arguments into text: it does not preserve reliable argument
-  boundaries or original shell quoting. Spaced or quoted command paths are
-  ambiguous and **report-only**, even when they appear to match. This deliberately
-  misses some legitimate candidates rather than guessing. Godot eligibility
-  additionally requires exactly the executable and script, with no extra arguments.
+Legacy bare numeric ages are rejected. Replace
+`./cleanup_orphan_processes.sh 6` with
+`./orphan-cleanup scan --min-age-hours 6`. The existing script accepts the same
+CLI as the wrapper. Scan output is not authorization to terminate a process.
 
-The library termination primitive validates the complete explicit selection
-before signalling, then rereads identity and eligibility immediately before each
-SIGTERM. It observes outcomes for up to five seconds per PID, distinguishes exits,
-skips, survivors, and errors, and does not escalate to SIGKILL or terminate trees
-or process groups. Required collection or logging failures prevent signalling;
-logs must be writable first and omit full commands by default. These safeguards
-are tested at library level; they do not expose cleanup from the M1 CLI.
+## Safety, limitations, and privacy
 
-## Limitations and privacy
+Only narrowly matching Godot processes can be eligible; all Chrome matches are
+report-only. See [exact rules and reason codes](docs/PROFILES.md).
+Age, repeated commands, and PPID 1 are clues, not proof of abandonment. Termination
+can interrupt useful work or lose data. Scanning does not fix the leaking launcher.
 
-Age, repeated commands, and PPID 1 are clues—not proof that work is abandoned.
-A long-running headless browser or MCP server may still be useful. Scanning does
-not fix the client or launcher that leaked a process.
+Flattened macOS `ps` output does not preserve argument boundaries or quoting;
+ambiguous matches fail closed. Portable shell revalidation reduces but cannot
+eliminate the PID-reuse race between checking and signalling. It is not atomic
+identity checking and cannot guarantee harmless termination.
 
-Portable shell revalidation reduces but cannot eliminate the PID-reuse race
-between checking a process and signalling it. It is not atomic identity checking
-and cannot guarantee that termination is harmless.
-
-RSS is a point-in-time estimate of resident memory, not measured RAM freed.
-Shared pages, changing workloads, and system memory accounting prevent exact
-reclamation claims.
-
-Normal output omits full commands. `--verbose` can expose tokens, usernames,
-private paths, URLs, or other secrets. Review and redact output before sharing;
-do not paste raw process listings into issues. No telemetry is part of the design.
-
-[docs/sample-run.txt](docs/sample-run.txt) is **legacy historical output**, not an
-example of M1 behavior or evidence of current safety or memory-reclamation claims.
-
-## Help shape the next milestone
-
-Try the read-only scan and open an issue with missed matches or confusing
-explanations. Include your macOS version, expected behavior, and **redacted**
-output—not secrets or private paths. The deliberate cleanup workflow follows in
-milestone 2; automation and broader expansion are optional, not promised.
+RSS is a point-in-time estimate, not measured RAM freed. Shared pages and changing
+workloads prevent exact reclamation claims. There is no telemetry. Do not paste
+raw process listings into issues. [Historical sample output](docs/sample-run.txt)
+is legacy, not evidence of current behavior or memory reclamation.
 
 ## Development and verification
-
-Run the safety test harness with:
 
 ```bash
 /bin/bash tests/run.sh
 ```
 
-The suite covers fixtures and guarded disposable-process tests; it must not
-terminate ambient processes. Passing tests alone does not complete a milestone:
-see the [tracker's evidence and exit gates](docs/ROADMAP.md). Locally verified on
-macOS 26 / Apple Silicon with Bash 3.2.57; other combinations remain unverified
-until the milestone 3 compatibility matrix and CI are established.
+Tests must use fixtures or guarded disposable processes, never cleanup of ambient
+applications. Passing tests alone does not satisfy release gates. M1 was locally
+verified on macOS 26 / Apple Silicon with Bash 3.2.57; this is not a claim of M2
+verification or an M3 compatibility matrix. Report missed matches or confusing
+reasons with macOS version and redacted output.
 
 ## License
 
 [MIT](LICENSE).
+
+Development test dependency: Python 3 is required for the CLI and pseudo-terminal
+suite; the production tool still uses only stock Bash and macOS utilities.
