@@ -40,7 +40,6 @@ oc_collect() {
 
 oc_init() {
     OC_UID=$(id -u) || return 1
-    OC_SELF=$$
     OC_EXCLUDED=" 1 $$ "
     local parent=$$ next count=0
     while [ "$parent" -gt 1 ] && [ "$count" -lt 128 ]; do
@@ -55,7 +54,7 @@ oc_init() {
 
 oc_classify() {
     local pid=$1 uid=$2 ppid=$3 start=$4 elapsed=$5 rss=$6 exe=$7 cmd=$8 age
-    OC_PROFILE= OC_REASON=unmatched OC_SECONDS=0
+    OC_PROFILE='' OC_REASON=unmatched
     [ "$uid" = "$OC_UID" ] || { OC_REASON=other_uid; return; }
     case "$cmd" in
         *godot-mcp/build/index.js*) OC_PROFILE=godot-mcp ;;
@@ -72,7 +71,6 @@ oc_classify() {
     normalized=$(printf '%s\n' "$normalized" | awk '{$1=$1; print}')
     [ "$normalized" = "$start" ] || return 0
     age=$(oc_elapsed "$elapsed") || return 0
-    OC_SECONDS=$age
     case "$OC_EXCLUDED" in *" $pid "*) OC_REASON=excluded_identity; return ;; esac
     OC_REASON=ambiguous_command
     # Only an unambiguous no-whitespace argv prefix is eligible. Reject shell

@@ -1,6 +1,6 @@
 #!/bin/bash
 set -u
-ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+ROOT=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 TMP=$(mktemp -d) || exit 1
 CHILD=
 finish() { if [ -n "$CHILD" ]; then kill -TERM "$CHILD" 2>/dev/null || :; wait "$CHILD" 2>/dev/null || :; fi; rm -rf "$TMP"; }
@@ -16,7 +16,7 @@ status() { local expected=$1; shift; "$@" > "$TMP/out" 2> "$TMP/err"; local got=
 contains() { grep -q "$1" "$TMP/out" || fail "missing output $1"; PASS=$((PASS + 1)); }
 [ "${1:-}" != --assertion-failure ] || eq wrong right 'intentional failure'
 status 1 /bin/bash "$0" --assertion-failure
-OC_UID=501 OC_SELF=900 OC_EXCLUDED=' 1 900 901 ' OC_MIN_SECONDS=10800
+OC_UID=501 OC_EXCLUDED=' 1 900 901 ' OC_MIN_SECONDS=10800
 record() { printf '%s\t%s\t%s\tMon Oct 19 12:00:00 2026\t%s\t%s\t%s\t%s\n' "$1" "${2:-501}" "${3:-1}" "${4:-03:00:00}" "${5:-1024}" "${6:-/usr/local/bin/node}" "${7:-/usr/local/bin/node /tmp/godot-mcp/build/index.js}"; }
 BASE=$(record 100)
 for pair in '03:00 180' '03:00:00 10800' '1-02:03:04 93784' '00:00 0' '02:59:59 10799' '03:00:01 10801'; do
@@ -122,7 +122,13 @@ oc_log() { return 1; }
 eq "$(cat "$SIGNALS")" '' 'log write failure prevents signal'
 oc_log() { original_log "$@"; }
 grep -q '/tmp/godot-mcp' "$LOGFILE" && fail 'command leaked to log'
-# Public CLI is always read-only; invoke with an isolated HOME.
+# Public CLI uses synthetic OS collection, never ambient process snapshots.
+mkdir -p "$TMP/synthetic-bin"
+printf '#!/bin/sh\nif [ "$1" = -p ]; then echo 1; fi\n' > "$TMP/synthetic-bin/ps"
+chmod +x "$TMP/synthetic-bin/ps"
+SAVED_PATH=$PATH
+export PATH="$TMP/synthetic-bin:$PATH"
+# Public CLI read-only invocations use an isolated HOME.
 for args in '' scan --dry-run -n '--min-age-hours 48' '--profile godot-mcp' --verbose --help; do
     # Intentional splitting of fixed test cases, never user input.
     status 0 /bin/bash "$ROOT/cleanup_orphan_processes.sh" $args
@@ -141,6 +147,7 @@ status 2 env PATH="$TMP/bin:$PATH" /bin/bash "$ROOT/cleanup_orphan_processes.sh"
 printf '#!/bin/sh\nexit 99\n' > "$TMP/bin/memory_pressure"; chmod +x "$TMP/bin/memory_pressure"
 rm "$TMP/bin/ps" "$TMP/bin/uname"
 status 0 env PATH="$TMP/bin:$PATH" /bin/bash "$ROOT/cleanup_orphan_processes.sh"
+export PATH=$SAVED_PATH
 # Integration: only a child created here can receive a real signal. Synthetic
 # metadata replaces eligibility, not the production policy. No ambient selection.
 /bin/sleep 30 & CHILD=$!

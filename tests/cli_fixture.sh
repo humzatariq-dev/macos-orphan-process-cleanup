@@ -2,7 +2,7 @@
 # Test harness only: never calls the real signal function or exposes a test flag
 # in production. Exercise the actual shared CLI with explicit function seams.
 set -u
-ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+ROOT=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 . "$ROOT/lib/core.sh"
 . "$ROOT/lib/cli.sh"
 oc_init() { OC_UID=501; OC_EXCLUDED=' 1 900 '; [ "${SCENARIO:-}" != root ] || OC_UID=0; }

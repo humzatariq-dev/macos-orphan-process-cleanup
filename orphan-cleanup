@@ -1,4 +1,4 @@
 #!/bin/bash
 # Both public entrypoints use exactly the same implementation.
-ROOT=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd) || exit 1
+ROOT=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd) || exit 1
 exec /bin/bash "$ROOT/cleanup_orphan_processes.sh" "$@"

@@ -1,7 +1,7 @@
 # Shared Bash 3.2 CLI. Safe to source: only defines functions.
 oc_usage() {
     cat <<'HELP'
-orphan-cleanup 0.2.0-dev — inspect leftover developer processes on macOS
+orphan-cleanup 0.2.0 — inspect leftover developer processes on macOS
 Usage: orphan-cleanup [scan] [--profile godot-mcp|headless-chrome]
                      [--min-age-hours N] [--verbose]
        orphan-cleanup clean --profile godot-mcp|headless-chrome
@@ -25,10 +25,10 @@ HELP
 oc_cli_error() { printf '%s\n' "$*" >&2; return 2; }
 oc_tty() { [ -t 0 ] && [ -t 1 ]; }
 oc_main() {
-    local mode= age=3 profile= verbose=0 age_seen=0 dry_seen=0 yes=0
-    local pids=() seen=' ' pid snapshot selected= row answer
+    local mode='' age=3 profile='' verbose=0 age_seen=0 dry_seen=0 yes=0
+    local pids=() seen=' ' pid snapshot selected='' row answer
     if [ "$#" -eq 1 ]; then
-        case "$1" in --help|-h) oc_usage; return 0 ;; --version) echo 'orphan-cleanup 0.2.0-dev'; return 0 ;; esac
+        case "$1" in --help|-h) oc_usage; return 0 ;; --version) echo 'orphan-cleanup 0.2.0'; return 0 ;; esac
     fi
     while [ "$#" -gt 0 ]; do
         case "$1" in
@@ -58,6 +58,8 @@ oc_main() {
         [ "$yes" -eq 0 ] && [ "${#pids[@]}" -eq 0 ] || return 2
     fi
     [ "$(uname -s)" = Darwin ] || { oc_cli_error 'macOS required.'; return 2; }
+    # Shared with classification in core.sh.
+    # shellcheck disable=SC2034
     OC_MIN_SECONDS=$((10#$age * 3600))
     oc_init || { echo 'Cannot determine process ancestry.' >&2; return 1; }
     if [ "$mode" = clean ]; then
