@@ -1,6 +1,6 @@
 # Adoption-ready release tracker
 
-Status: **milestones 1–2 implemented and locally verified; milestone 3 planned**.
+Status: **M1–M2 complete; M3 tooling verified, publication pending**.
 
 This document is the source of truth for the next release. Milestones 1–3 are
 the agreed scope, in order. Milestones 4–5 are optional backlog, not promises
@@ -311,7 +311,7 @@ approval. It is not part of this task or a release requirement.
 
 ### M3-01 — macOS CI and shell linting
 
-- [ ] Complete M3-01. Dependencies: M2-03.
+- [x] Complete M3-01. Dependencies: M2-03.
 
 Acceptance criteria:
 - GitHub Actions runs syntax checks, the full fixture/CLI suite, guarded
@@ -329,7 +329,7 @@ Bash version and all required checks.
 
 ### M3-02 — Versioned install and uninstall
 
-- [ ] Complete M3-02. Dependencies: M2-03.
+- [x] Complete M3-02. Dependencies: M2-03.
 
 Acceptance criteria:
 - Provide a repository-owned install/uninstall mechanism with a configurable
@@ -347,7 +347,7 @@ Verification: automated installation lifecycle test against the release layout.
 
 ### M3-03 — Trustworthy README and onboarding
 
-- [ ] Complete M3-03. Dependencies: M2-03, M3-02.
+- [x] Complete M3-03. Dependencies: M2-03, M3-02.
 
 Acceptance criteria:
 - Lead with developer use cases, read-only quick start, limitations, installation,
@@ -368,7 +368,7 @@ installation and a completed review of claims against actual behavior.
 
 ### M3-04 — Contributor and feedback path
 
-- [ ] Complete M3-04. Dependencies: M3-01, M3-03.
+- [x] Complete M3-04. Dependencies: M3-01, M3-03.
 
 Acceptance criteria:
 - Add contributing instructions with setup, tests, safety invariants, and the
@@ -453,3 +453,21 @@ sync; planning/documentation work alone does not complete implementation tasks.
 - Syntax checks passed for every shell file; `git diff --check` passed.
 - M2-04 stays unchecked/deferred pending consented real Unity launch examples.
 - M3 CI, compatibility coverage, installation and release verification remain open.
+
+### Milestone 3 pre-publication evidence
+
+- M3-01: `1530aac`, `3c9d2fd`, `d35a3c9`; hosted CI run `39354385806`
+  succeeded for both macos-15 and macos-15-intel. The final tag target must also
+  have green CI before publication; exact environment output is in job logs.
+- M3-02: isolated install, upgrade, conflicts, symlinks, interrupted-rename
+  rollback, log preservation and repeated uninstall passed; paths include spaces.
+- M3-03: README install/scan/help/version/uninstall smoke paths covered by
+  installer and package tests; synthetic text demo matches fixture golden output.
+- M3-04: CONTRIBUTING.md, redaction-aware issue forms and PR checklist reviewed.
+- Local full check: stock Bash 3.2.57, Python 3, ShellCheck 0.11.0; 123 core
+  assertions, 73 CLI/PTY cases, install lifecycle, archive checksum/extraction,
+  artifact install/version/help/uninstall, failed-package preservation passed.
+- Current measured local OS: macOS 27.0.1 (26A434), arm64. Earlier evidence labels
+  saying macOS 26 were inaccurate; this records the actual sw_vers observation.
+- M3-05 remains open until the final commit passes CI and published assets are
+  downloaded, checksum-verified and lifecycle-tested. No completion is assumed.

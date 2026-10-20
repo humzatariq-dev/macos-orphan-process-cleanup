@@ -3,7 +3,7 @@
 ## 0.2.0 — release candidate (not yet published)
 
 Release candidate, not yet published. Installation and packaging pass locally;
-hosted CI and publication are pending. See the [release tracker](docs/ROADMAP.md)
+hosted architecture checks pass; publication is pending. See the [release tracker](docs/ROADMAP.md)
 for acceptance gates and completion evidence.
 
 ### CLI and breaking changes
@@ -68,3 +68,8 @@ for acceptance gates and completion evidence.
 - CI tests now use synthetic process collection rather than ambient snapshots.
 - Correct current local OS observation to macOS 27.0.1 (26A434), arm64; earlier
   macOS 26 labels were not an accurate OS-version record.
+
+- Fix interrupted-upgrade rollback using filesystem state, with injected TERM
+  regression tests at both runtime rename boundaries.
+- Packaging now propagates archive failures and preserves an existing artifact
+  when creation fails; covered by failure-injection tests.

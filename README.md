@@ -8,7 +8,8 @@ headless Chrome processes—not a general RAM optimizer.
 **Target: 0.2.0**, not yet published. The current CLI reports `0.2.0`.
 The canonical `./orphan-cleanup` wrapper and existing
 `./cleanup_orphan_processes.sh` entrypoint share one core CLI and the same safety
-rules. Local M3 tooling verification passes; hosted CI and publication are pending. Optional Unity
+rules. Local tooling and both hosted CI architecture jobs pass; release publication is
+pending. Optional Unity
 visibility is deferred and is not supported.
 
 See [profile rules](docs/PROFILES.md) and the [changelog](CHANGELOG.md).
@@ -183,3 +184,14 @@ support claim. Runner labels alone are not verification evidence.
 
 Development test dependency: Python 3 is required for the CLI and pseudo-terminal
 suite; the production tool still uses only stock Bash and macOS utilities.
+
+## Verification matrix
+
+| Environment | Evidence | Status |
+| --- | --- | --- |
+| Local macOS 27.0.1 (26A434), arm64, Bash 3.2.57 | Full checks, installer and artifact lifecycle | Passed |
+| GitHub `macos-15`, Apple Silicon | CI job logs record exact OS/build and Bash | Passed |
+| GitHub `macos-15-intel`, Intel | CI job logs record exact OS/build and Bash | Passed |
+| Other macOS versions/architectures | No test evidence yet | Unverified |
+
+See the repository Actions tab and [release checklist](docs/RELEASE.md).
