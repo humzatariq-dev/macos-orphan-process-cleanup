@@ -1,11 +1,11 @@
 # Adoption-ready release tracker
 
-Status: **milestone 1 implemented and locally verified; milestones 2–3 planned**.
+Status: **milestones 1–2 implemented and locally verified; milestone 3 planned**.
 
 This document is the source of truth for the next release. Milestones 1–3 are
 the agreed scope, in order. Milestones 4–5 are optional backlog, not promises
-and not release requirements. The public M1 entrypoint is read-only; the tested
-termination core is not exposed until M2 confirmation is implemented.
+and not release requirements. Public entrypoints scan by default; deliberate
+cleanup now requires explicit selection and confirmation (or explicit --yes).
 
 ## Goal and boundaries
 
@@ -38,7 +38,7 @@ pass; explicitly optional tasks are non-blocking. Do not check tasks merely beca
 | Milestone | Priority | Status | Exit gate |
 | --- | --- | --- | --- |
 | 1. Correctness and safety | Required, first | Complete (local verification) | Fixture suite and disposable-process safety tests pass |
-| 2. Useful CLI | Required, after M1 | Not started | Documented command contract passes end-to-end tests |
+| 2. Useful CLI | Required, after M1 | Complete (local verification) | Documented command contract passes end-to-end tests |
 | 3. Adoption-ready release | Required, after M2 | Not started | CI, clean install/uninstall, and release checklist pass |
 | 4. Community-led expansion | Optional | Deferred | Separate scope approval required |
 | 5. Optional automation | Optional | Deferred | Separate safety review and scope approval required |
@@ -84,8 +84,8 @@ Godot eligibility requires exactly two whitespace-free words (executable and
 script), without quotes or escapes. A reliable argv collector is required before
 enabling browser cleanup; this may remain deferred rather than weaken safety.
 Scanning still reports both profiles. This restriction supersedes any implication
-below that both profiles must be cleanable in M2. The public M1 CLI is scan-only;
-M2 retains ownership of the complete command contract and confirmation flow.
+below that both profiles must be cleanable in M2. M1 introduced scan-only behavior;
+M2 now provides the command contract and confirmation flow below.
 
 ### CLI contract
 
@@ -219,7 +219,7 @@ test touches processes not created by that test.
 
 ### M2-01 — Safe command parsing and migration
 
-- [ ] Complete M2-01. Dependencies: M1-05.
+- [x] Complete M2-01. Dependencies: M1-05.
 
 Acceptance criteria:
 - Implement the full locked CLI contract, including defaults, aliases,
@@ -234,7 +234,7 @@ Verification: CLI argument matrix covering each branch of the contract.
 
 ### M2-02 — Explainable scan and built-in profiles
 
-- [ ] Complete M2-02. Dependencies: M2-01.
+- [x] Complete M2-02. Dependencies: M2-01.
 
 Acceptance criteria:
 - Show all required human-output fields and clear eligible/keep reasons for
@@ -251,7 +251,7 @@ verbose scans; ensure ordinary output/logs contain no fixture secret token.
 
 ### M2-03 — Deliberate interactive and noninteractive cleanup
 
-- [ ] Complete M2-03. Dependencies: M2-02.
+- [x] Complete M2-03. Dependencies: M2-02.
 
 Acceptance criteria:
 - Implement explicit profile/PID selection, fresh preview, exact confirmation,
@@ -437,3 +437,19 @@ sync; planning/documentation work alone does not complete implementation tasks.
 | M1-03 | `0e2fa85` | `/bin/bash tests/run.sh`: 123 assertions passed; syntax and diff checks passed | Local macOS 26, arm64, Bash 3.2.57; fixtures and guarded disposable child |
 | M1-04 | `0e2fa85` | `/bin/bash tests/run.sh`: 123 assertions passed; syntax and diff checks passed | Local macOS 26, arm64, Bash 3.2.57; fixtures and guarded disposable child |
 | M1-05 | `0e2fa85` | `/bin/bash tests/run.sh`: 123 assertions passed; syntax and diff checks passed | Local macOS 26, arm64, Bash 3.2.57; fixtures and guarded disposable child |
+### Milestone 2 completion evidence
+
+- M2-01: implementation commit `4d37eeb`; `/bin/bash tests/run.sh` passed
+  123 core assertions and 73 CLI/PTY cases on macOS 26 arm64, Bash 3.2.57.
+- M2-02: implementation commit `4d37eeb`; `/bin/bash tests/run.sh` passed
+  123 core assertions and 73 CLI/PTY cases on macOS 26 arm64, Bash 3.2.57.
+- M2-03: implementation commit `4d37eeb`; `/bin/bash tests/run.sh` passed
+  123 core assertions and 73 CLI/PTY cases on macOS 26 arm64, Bash 3.2.57.
+- Verified golden empty/mixed/profile/verbose output, secret omission, parser
+  rejection paths, actual PTY consent/cancellation/EOF, piped-input refusal,
+  confirmation-time second-PID mutation, full-selection preflight, and explicit
+  --yes behavior. Both real entrypoints exercised with synthetic collection in a
+  checkout path containing spaces; no ambient cleanup.
+- Syntax checks passed for every shell file; `git diff --check` passed.
+- M2-04 stays unchecked/deferred pending consented real Unity launch examples.
+- M3 CI, compatibility coverage, installation and release verification remain open.
