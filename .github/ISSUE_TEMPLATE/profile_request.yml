@@ -1,0 +1,52 @@
+name: Profile request
+description: Propose a narrow profile with synthetic positive and negative examples.
+body:
+  - type: markdown
+    attributes:
+      value: |
+        No cleanup is needed. Use scan only. Do not share full commands, tokens,
+        usernames, private paths, URLs, or raw process listings. Redact output
+        before submitting; synthetic examples are preferred. Chrome is report-only;
+        Unity is deferred. A match is not proof a process is safe to stop.
+  - type: input
+    id: version
+    attributes:
+      label: Tool version
+      description: Output of orphan-cleanup --version and checkout commit if known.
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: Actual macOS version, build, and architecture
+      description: Record sw_vers and uname -m, not just a runner label.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Include scan-only reproduction steps; do not run cleanup.
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Redacted scan output or synthetic equivalent
+      description: Review for secrets first. Do not enable verbose just for this report.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: boundaries
+    attributes:
+      label: Profile boundaries and fixtures
+      description: Describe executable/argument matching, positive and negative synthetic cases, false-positive risks, and why report-only would not suffice. Avoid real private commands.
+    validations:
+      required: true

@@ -5,11 +5,10 @@ headless Chrome processes—not a general RAM optimizer.
 
 ## Status and scope
 
-**M2 CLI: 0.2.0-dev**, a development checkout, not a published release.
+**Target: 0.2.0**, not yet published. The current CLI reports `0.2.0`.
 The canonical `./orphan-cleanup` wrapper and existing
 `./cleanup_orphan_processes.sh` entrypoint share one core CLI and the same safety
-rules. M3 installation, CI, release verification, and distribution remain planned;
-use the checkout, not installation or scheduling instructions. Optional Unity
+rules. Local M3 tooling verification passes; hosted CI and publication are pending. Optional Unity
 visibility is deferred and is not supported.
 
 See [profile rules](docs/PROFILES.md) and the [changelog](CHANGELOG.md).
@@ -33,6 +32,35 @@ cd macos-orphan-process-cleanup
 ./orphan-cleanup scan --profile godot-mcp --min-age-hours 6
 ./orphan-cleanup scan --profile headless-chrome
 ```
+
+## Install, upgrade, and uninstall
+
+Review a trusted checkout before running scripts; do not pipe remote scripts into
+a shell. No sudo, service, daemon, or scheduled cleanup is needed. These are the
+verified installer commands:
+
+```bash
+./install.sh                         # default prefix: "$HOME/.local"
+./install.sh --prefix "$HOME/.local"
+export PATH="$HOME/.local/bin:$PATH"
+orphan-cleanup --version
+orphan-cleanup scan
+```
+
+Persist that PATH setting in your shell startup file if desired. A custom prefix
+uses `PREFIX/bin`; add that directory instead. Quote prefixes containing spaces.
+To upgrade, review the desired checkout, rerun the installer with the **same
+prefix**, and check `orphan-cleanup --version`. There is no published 0.2.0
+artifact to recommend yet; never infer release availability from this guide.
+
+```bash
+./install.sh --uninstall                         # default "$HOME/.local"
+./install.sh --uninstall --prefix "$HOME/.local" # or your original prefix
+```
+
+Uninstall with the checkout's installer, not broad recursive deletion commands.
+Review any retained cleanup logs separately; removing the tool does not undo
+signals or recover lost work. Remove your PATH entry only if no other tools use it.
 
 ## CLI
 
@@ -115,17 +143,39 @@ workloads prevent exact reclamation claims. There is no telemetry. Do not paste
 raw process listings into issues. [Historical sample output](docs/sample-run.txt)
 is legacy, not evidence of current behavior or memory reclamation.
 
+## Troubleshooting
+
+- **Command not found:** use `./orphan-cleanup` from the checkout, or add the
+  installation's `bin` directory to PATH. `command -v orphan-cleanup` locates
+  the selected copy; compare its `--version` after upgrading.
+- **No matches / kept processes:** review [profile rules](docs/PROFILES.md).
+  PPID 1 and age are conservative filters, not proof of a leak. Chrome is
+  report-only; Unity is deferred. Do not broaden matches just to obtain candidates.
+- **Cleanup refused:** do not use sudo. Select one profile and fresh, explicit
+  PIDs; stale or ineligible selections fail closed. Review logging permissions
+  at `LOGFILE` (or the default path) rather than disabling logging.
+- **Survivors or identity changes:** investigate and rescan. There is no automatic
+  escalation; never reuse old PID selections blindly.
+- **Need help:** use the issue forms with version, OS/build, architecture, and
+  redacted scan output. No cleanup is needed to report a problem. Avoid sharing
+  verbose output, tokens, private paths, usernames, or raw process listings.
+
 ## Development and verification
 
-```bash
-/bin/bash tests/run.sh
-```
+See [CONTRIBUTING.md](CONTRIBUTING.md) for checks and safety invariants and the
+[reproducible synthetic demo](docs/DEMO.md) for scan-only output.
+Runtime requires no additional dependencies. Development needs Python 3 and
+ShellCheck. The M3 `./scripts/check.sh` contract is syntax checking and ShellCheck
+for all `*.sh` files plus `orphan-cleanup`, followed by `/bin/bash tests/run.sh`.
+`./scripts/package.sh` is intended to write an archive and checksum to `./dist`;
+these M3 commands are illustrative until the scripts exist in your checkout.
+Packaging is not publication or release verification.
 
-Tests must use fixtures or guarded disposable processes, never cleanup of ambient
-applications. Passing tests alone does not satisfy release gates. M1 was locally
-verified on macOS 26 / Apple Silicon with Bash 3.2.57; this is not a claim of M2
-verification or an M3 compatibility matrix. Report missed matches or confusing
-reasons with macOS version and redacted output.
+Observed locally for this documentation: **macOS 27.0.1 (build 26A434), arm64,
+Bash 3.2.57**. This observation is not a compatibility certification or a CI result.
+Planned CI runners are `macos-14` (arm64) and `macos-15-intel` (x86_64);
+each run must record actual OS/build, architecture, and Bash versions before any
+support claim. Runner labels alone are not verification evidence.
 
 ## License
 

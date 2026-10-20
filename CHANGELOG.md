@@ -1,9 +1,9 @@
 # Changelog
 
-## Unreleased — 0.2.0-dev (M2)
+## 0.2.0 — release candidate (not yet published)
 
-Development CLI, not a published release. M3 installation, CI, distribution,
-and release verification remain planned. See the [release tracker](docs/ROADMAP.md)
+Release candidate, not yet published. Installation and packaging pass locally;
+hosted CI and publication are pending. See the [release tracker](docs/ROADMAP.md)
 for acceptance gates and completion evidence.
 
 ### CLI and breaking changes
@@ -55,3 +55,16 @@ for acceptance gates and completion evidence.
 - Verification: 123 core assertions and 73 CLI/PTY cases pass locally, including
   confirmation-time mutation, golden scan output, and both entrypoints in a
   checkout path containing spaces. Python 3 is a development-only test dependency.
+
+### Adoption and distribution
+
+- Add user-local install/upgrade/uninstall with prefix support, ownership checks,
+  symlink/conflict refusal, staged upgrades, and preserved logs.
+- Add least-privilege macOS CI for Apple Silicon and Intel, SHA-pinned Actions,
+  stock Bash checks, ShellCheck, fixture/PTY tests, installer and archive tests.
+- Add committed-source packaging with a SHA-256 checksum and release checklist.
+- Add synthetic scan demo, contributor instructions, redaction-aware issue forms,
+  and PR checklist. Unity remains optional/deferred; Chrome remains report-only.
+- CI tests now use synthetic process collection rather than ambient snapshots.
+- Correct current local OS observation to macOS 27.0.1 (26A434), arm64; earlier
+  macOS 26 labels were not an accurate OS-version record.
