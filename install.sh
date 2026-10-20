@@ -76,16 +76,15 @@ source_root=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 mkdir -p -- "$bin" "$base"
 stage=$(mktemp -d "$base/.orphan-cleanup.XXXXXX")
 launch_stage=''
-old=0
-new=0
 committed=0
 finish() {
-    if [ "$committed" -eq 0 ]; then
-        if [ "$new" -eq 1 ]; then
-            for file in $files .owned; do rm -f -- "$runtime/$file"; done
-            rmdir -- "$runtime/lib" "$runtime"
+    if [ "$committed" -eq 0 ] && [ -d "$stage/previous" ]; then
+        # Inspect rename results: a signal may arrive before a following shell
+        # assignment. Keep the previous tree until restoration has succeeded.
+        if [ -e "$runtime" ]; then
+            mv -- "$runtime" "$stage/interrupted-new" || return 1
         fi
-        if [ "$old" -eq 1 ]; then mv -- "$stage/previous" "$runtime"; fi
+        mv -- "$stage/previous" "$runtime" || return 1
     fi
     [ -z "$launch_stage" ] || rm -f -- "$launch_stage"
     # Only this invocation's private staging tree is recursively removed.
@@ -103,8 +102,8 @@ chmod 755 "$launch_stage"
 # Keep the old tree until the launcher has been published successfully.
 mkdir "$stage/next"
 for file in orphan-cleanup cleanup_orphan_processes.sh lib .owned; do mv -- "$stage/$file" "$stage/next/$file"; done
-if [ -e "$runtime" ]; then mv -- "$runtime" "$stage/previous"; old=1; fi
-mv -- "$stage/next" "$runtime"; new=1
+if [ -e "$runtime" ]; then mv -- "$runtime" "$stage/previous"; fi
+mv -- "$stage/next" "$runtime"
 mv -f -- "$launch_stage" "$launcher"; launch_stage=''
 committed=1
 printf 'Installed orphan-cleanup in %s\nAdd %s to PATH.\n' "$prefix" "$bin"

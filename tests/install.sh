@@ -73,6 +73,22 @@ refuse --prefix "$prefix" --uninstall
 rm "$prefix/libexec/orphan-cleanup/lib/core.sh"
 mv "$TMP/core" "$prefix/libexec/orphan-cleanup/lib/core.sh"
 install --prefix "$prefix"
+# Inject TERM immediately after either runtime rename; previous installation
+# must survive regardless of shell assignment timing.
+for boundary in previous next; do
+    cat > "$TMP/mock/mv" <<'MV'
+#!/bin/bash
+/bin/mv "$@" || exit
+case "$INTERRUPT_BOUNDARY:$*" in
+    previous:*'/previous'|next:*'/next '*'/libexec/orphan-cleanup') kill -TERM "$PPID" ;;
+esac
+MV
+    chmod +x "$TMP/mock/mv"
+    export INTERRUPT_BOUNDARY=$boundary
+    refuse --prefix "$prefix"
+    [ "$("$prefix/bin/orphan-cleanup" --version)" = "$source_version" ]
+    rm "$TMP/mock/mv"
+done
 install --prefix "$prefix" --uninstall
 install --prefix "$prefix" --uninstall
 [ "$(cat "$LOGFILE")" = 'preserve logs' ]
